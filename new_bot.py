@@ -7,48 +7,65 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-state = 1
+# States
+START = 1
+QUESTION_1 = 2
+QUESTION_2 = 3
+END = 4
+
+user_states = {}
 
 updater = Updater(token="5689428489:AAHZCYxzZe1cvcRMoxhIdPjsfx0VSN8lGVQ", use_context=True)
 dispatcher = updater.dispatcher
 
 def start_command_handler(update: Update, context: CallbackContext):
-    global state
-    if state == 1:
-        text = """
-Ви прокидаєтесь в темній кімнаті, що ви будете робити?
-1: Спати далі
-2: Йти гуляти
-"""
+    global user_states
+    
+    user_id = update.effective_chat.id
+    
+    # If user not in states - add him / her
+    if user_id not in user_states:
+        user_states[user_id] = START
+        
+    print(f"[/start]: current user state: {user_states[user_id]}")
+        
+    # Check state of current user
+    if user_states[user_id] == START:
+        text = "Ви прокидаєтесь в темній кімнаті, що ви будете робити?\n1: Спати далі\n2: Йти гуляти"
         context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-        state += 1
+        user_states[user_id] += 1
     else:
         pass
 
 def text_message_handler(update: Update, context: CallbackContext):
     message = update.message.text
-    global state
-    if state == 2:
+    user_id = update.effective_chat.id
+    
+    global user_states
+    
+    print(f"[text]: current user state: {user_states[user_id]}")
+    
+    if user_states[user_id] == QUESTION_1:
         if message == "1":
             context.bot.send_message(chat_id=update.effective_chat.id, text="Хороший вибір")
-            state = 1
+            user_states[user_id] = 1
             text = "Гра закінчилась. Введіть /start, щоб почати знову."
             context.bot.send_message(chat_id=update.effective_chat.id, text=text)
         elif message == "2":
-            text = """"
-Треба знайти ключі. Де будемо шукати?
-1: Шухляда
-2: На кухні
-            """
+            text = "Треба знайти ключі. Де будемо шукати?\n1: Шухляда\n2: На кухні"
             context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-            state += 1
-    elif state == 3:
+            user_states[user_id] += 1
+    elif user_states[user_id] == QUESTION_2:
         if message == "1":
             context.bot.send_message(chat_id=update.effective_chat.id, text="Нічо не знайшов")
-            state += 1
+            user_states[user_id] += 1
         elif message == "2":
             context.bot.send_message(chat_id=update.effective_chat.id, text="Послизнувся і вмер. Бадум тсс...")
-            state += 1
+            user_states[user_id] += 1
+    elif user_states[user_id] == END:
+        user_states[user_id] = 1
+        text = "Гра закінчилась. Введіть /start, щоб почати знову."
+        context.bot.send_message(chat_id=update.effective_chat.id, text=text)
     else:
         pass
 
